@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 
@@ -13,6 +15,11 @@ import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
+import model.City;
+import model.Company;
+import model.Customer;
+import model.State;
+
 // Extend HttpServlet class
 
   
@@ -20,51 +27,31 @@ import javax.servlet.http.*;
 public class people_details extends HttpServlet {
 	  
 	 public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
-			try {
-				Class.forName("oracle.jdbc.driver.OracleDriver");
-			} catch (ClassNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			
-			// int customer_id  = Integer.parseInt(request.getParameter("customer_id"));
-			 String url = "jdbc:oracle:thin:testuser/password@localhost"; 
-		      //properties for creating connection to Oracle database
-		      Properties props = new Properties();
-		      
-		      props.setProperty("user", "testdb");
-		      props.setProperty("password", "password");
-		    
-		      //creating connection to Oracle database using JDBC
-		      Connection conn;
-			
-			  PreparedStatement preStatement;
-			  String  people_details = "";
-			  String sql_command = "select  firstname, lastname, streetaddress, city, state, zipcode,position,name, emailaddress "
-			  		+ "from customers,cities,states,companies where customers.city_id = cities.ID "
-			  		+ "and customers.STATE_ID = states.id and customers.COMPANY_ID = companies.id "
-			  		+ "and personid = " + request.getParameter("customer_ID");
-			  System.out.println(sql_command);
-			  try{
-					conn = DriverManager.getConnection(url,props);
-					preStatement = conn.prepareStatement(sql_command);
-					ResultSet result = preStatement.executeQuery();
-				
-				    while(result.next()){
-				    	people_details += "<p><b> Name:  </b>"+ result.getString("firstname") + "  " + result.getString("lastname")+ "</p>" ;
-				    	people_details += "<p><b> Address: </b>"   + result.getString("streetaddress") + "</p>";
-				    	people_details += "<p> " + result.getString("city") +", " + result.getString("state") + "   " + result.getInt( "zipcode") + "</p>";
-				    	people_details += "<p><b> Email Address: </b>"   + result.getString("emailaddress") + "</p>";
-				    	people_details += "<p><b> Position: </b>"   + result.getString("position") + "</p>";
-				    	people_details += "<p><b> Company: </b>"   + result.getString("name") + "</p>";
+		 List <Customer> customers = new ArrayList<Customer>();
+		 List <City> cities = new ArrayList<City>();
+		 List <State> states = new ArrayList<State>();
+		 List<Company> companies = new ArrayList<Company>();
+		 
+		 String people_details = "";
+		 
+		 long id = Long.parseLong(request.getParameter("customer_ID"));
+		 
+		 customers = People_Finder_DB.select_single_customer(id);
+		 cities = People_Finder_DB.select_single_city(id);
+		 states = People_Finder_DB.select_single_state(id);
+		 companies = People_Finder_DB.select_single_company(id);
+		 
+		 
+		
+			people_details += "<p><b> Name:  </b>"+ customers.get(0).getFirstname() + "  " +customers.get(0).getLastname()+ "</p>" ;
+	    	people_details += "<p><b> Address: </b>"   + customers.get(0).getStreetaddress() + "</p>";
+	    	people_details += "<p> " + cities.get(0).getCity() +", " + states.get(0).getState()+ "   " + customers.get(0).getZipcode() + "</p>";
+	    	people_details += "<p><b> Email Address: </b>"   + customers.get(0).getEmailaddress() + "</p>";
+	    	people_details += "<p><b> Position: </b>"   + customers.get(0).getPosition() + "</p>";
+	    	people_details += "<p><b> Company: </b>"   + companies.get(0).getName()  + "</p>";
+
+		
 				    	
-				    }
-				    
-				    conn.close();
-			  	}catch (SQLException e) {
-						// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 			  request.setAttribute("people_details",people_details);
 			  getServletContext().getRequestDispatcher("/People_details.jsp").forward(request, response);
 		  }
